@@ -6,7 +6,7 @@ export function useWidgetConfig() {
   const queryClient = useQueryClient();
 
   // Query for fetching widget configuration
-  const { data: config, isLoading, error } = useQuery({
+  const { data: config, isLoading, error } = useQuery<WidgetConfig>({
     queryKey: ['/api/widget/config'],
   });
 

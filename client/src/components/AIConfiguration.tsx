@@ -8,6 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { useWidgetConfig } from '@/hooks/useWidgetConfig';
 import { useToast } from '@/hooks/use-toast';
+import { WidgetConfig } from '@/lib/types';
 
 export default function AIConfiguration() {
   const { config, updateConfig, isLoading, isUpdating } = useWidgetConfig();

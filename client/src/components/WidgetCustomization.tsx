@@ -15,10 +15,29 @@ export default function WidgetCustomization() {
   const { config, updateConfig, isLoading, isUpdating } = useWidgetConfig();
   const { toast } = useToast();
   
-  // Generate embed code based on current configuration
-  const generateEmbedCode = (config: WidgetConfig | null) => {
-    if (!config) return '';
+  // Function to handle form submission
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!config) return;
     
+    // Generate embed code when saving config
+    const embedCode = generateEmbedCode(config);
+    
+    // Update configuration with new embed code
+    updateConfig({ 
+      ...config, 
+      embedCode, 
+      lastUpdated: new Date() 
+    });
+    
+    toast({
+      title: "Changes saved",
+      description: "Widget customization has been updated"
+    });
+  };
+  
+  // Generate embed code based on current configuration
+  const generateEmbedCode = (config: WidgetConfig) => {
     const domain = window.location.origin;
     return `<!-- AI Chat Widget -->
 <script>
