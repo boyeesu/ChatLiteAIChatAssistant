@@ -161,21 +161,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // API route for creating/retrieving a conversation
   app.post("/api/conversations", async (req: Request, res: Response) => {
     try {
-      // Get session ID from request, or generate a new one
-      const sessionIdSchema = z.object({ sessionId: z.string().optional() });
-      const { sessionId = randomUUID() } = sessionIdSchema.parse(req.body);
+      // Generate a new sessionId if none is provided
+      let sessionId = req.body.sessionId;
+      if (!sessionId) {
+        sessionId = randomUUID();
+      }
       
       // Check if conversation already exists
       let conversation = await storage.getConversationBySessionId(sessionId);
       
       // If not, create a new one
       if (!conversation) {
-        const validatedData = insertConversationSchema.parse({ sessionId });
-        conversation = await storage.createConversation(validatedData);
+        conversation = await storage.createConversation({ sessionId });
       }
       
       res.status(200).json(conversation);
     } catch (error) {
+      console.error("Conversation creation error:", error);
       res.status(500).json({ message: `Error creating conversation: ${error}` });
     }
   });
