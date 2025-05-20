@@ -5,13 +5,37 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
+import { Textarea } from '@/components/ui/textarea';
 import { MessageCircle, HeadphonesIcon, Bot, HelpCircle } from 'lucide-react';
 import { useWidgetConfig } from '@/hooks/useWidgetConfig';
 import { useToast } from '@/hooks/use-toast';
+import { WidgetConfig } from '@/lib/types';
 
 export default function WidgetCustomization() {
   const { config, updateConfig, isLoading, isUpdating } = useWidgetConfig();
   const { toast } = useToast();
+  
+  // Generate embed code based on current configuration
+  const generateEmbedCode = (config: WidgetConfig | null) => {
+    if (!config) return '';
+    
+    const domain = window.location.origin;
+    return `<!-- AI Chat Widget -->
+<script>
+  (function(w,d,s,o,f,js,fjs){
+    w['AIChatWidget']=o;w[o]=w[o]||function(){(w[o].q=w[o].q||[]).push(arguments)};
+    w[o].l=1*new Date();js=d.createElement(s),fjs=d.getElementsByTagName(s)[0];
+    js.id=o;js.src=f;js.async=1;fjs.parentNode.insertBefore(js,fjs);
+  }(window,document,'script','aiChat','${domain}/widget.js'));
+  aiChat('init', {
+    widgetId: 'default',
+    primaryColor: '${config.primaryColor}',
+    position: '${config.position}',
+    title: '${config.chatTitle}'
+  });
+</script>
+<!-- End AI Chat Widget -->`
+  };
 
   if (isLoading || !config) {
     return (
@@ -170,6 +194,37 @@ export default function WidgetCustomization() {
                 onCheckedChange={(checked) => updateConfig({ ...config, showAvatar: checked })}
               />
             </div>
+          </div>
+          
+          {/* Embed code section */}
+          <div className="space-y-2 mt-6 pt-6 border-t border-gray-100">
+            <Label htmlFor="embedCode">Widget Embed Code</Label>
+            <div className="relative">
+              <Textarea 
+                id="embedCode"
+                value={generateEmbedCode(config)}
+                readOnly
+                rows={6}
+                className="w-full font-mono text-xs pr-10"
+              />
+              <Button 
+                className="absolute top-2 right-2"
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  navigator.clipboard.writeText(generateEmbedCode(config));
+                  toast({
+                    title: "Copied!",
+                    description: "Embed code copied to clipboard"
+                  });
+                }}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+              </Button>
+            </div>
+            <p className="text-xs text-gray-500">
+              Use this code to embed the chat widget on any website. Copy and paste it right before the closing &lt;/body&gt; tag.
+            </p>
           </div>
           
           <Button 

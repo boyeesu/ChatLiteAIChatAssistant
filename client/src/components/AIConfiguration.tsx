@@ -109,6 +109,21 @@ export default function AIConfiguration() {
             />
           </div>
           
+          <div className="space-y-2">
+            <Label htmlFor="instructions">AI Instructions</Label>
+            <Textarea 
+              id="instructions"
+              placeholder="E.g., Sound like a human, don't use unnecessary icons, be concise..."
+              value={config.aiInstructions || ''}
+              onChange={(e) => updateConfig({ ...config, aiInstructions: e.target.value })}
+              rows={4}
+              className="w-full"
+            />
+            <p className="text-xs text-gray-500">
+              Specific instructions for how the AI should respond. These override the tone settings.
+            </p>
+          </div>
+          
           <div className="flex items-center justify-between">
             <div>
               <Label className="block">DeepSeek API Integration</Label>

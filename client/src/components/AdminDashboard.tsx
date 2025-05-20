@@ -87,65 +87,61 @@ export default function AdminDashboard() {
         <WidgetCustomization />
         <ChatAnalytics />
         
-        {/* Success Stories Card */}
+        {/* API Integration Guide Card */}
         <Card className="bg-white p-5 rounded-lg shadow-md">
-          <h2 className="text-lg font-semibold mb-4">Success Stories</h2>
+          <h2 className="text-lg font-semibold mb-4">Widget Integration Guide</h2>
           
-          <div className="grid grid-cols-2 gap-3 mb-4">
-            <svg className="rounded-md bg-gray-100 w-full h-32" viewBox="0 0 400 280" xmlns="http://www.w3.org/2000/svg">
-              <rect width="100%" height="100%" fill="#f5f7fa" />
-              <circle cx="200" cy="140" r="50" fill="#cbd5e0" />
-              <rect x="170" y="80" width="60" height="40" rx="10" fill="#a0aec0" />
-              <rect x="150" y="200" width="100" height="20" rx="5" fill="#a0aec0" />
-            </svg>
+          <div className="space-y-4">
+            <div className="bg-gray-50 p-4 rounded-md">
+              <h3 className="text-sm font-medium mb-2">1. Get Your Embed Code</h3>
+              <p className="text-sm text-gray-600">
+                From the Widget Customization panel, copy the embed code after configuring your widget appearance.
+              </p>
+            </div>
             
-            <svg className="rounded-md bg-gray-100 w-full h-32" viewBox="0 0 400 280" xmlns="http://www.w3.org/2000/svg">
-              <rect width="100%" height="100%" fill="#f5f7fa" />
-              <rect x="100" y="90" width="200" height="100" rx="5" fill="#a0aec0" />
-              <rect x="120" y="110" width="160" height="10" rx="2" fill="#cbd5e0" />
-              <rect x="120" y="130" width="160" height="10" rx="2" fill="#cbd5e0" />
-              <rect x="120" y="150" width="160" height="10" rx="2" fill="#cbd5e0" />
-            </svg>
-          </div>
-          
-          <div className="mb-4">
-            <h3 className="text-sm font-medium mb-2">Case Studies</h3>
-            <p className="text-sm text-gray-600 mb-2">Our AI Chat Assistant helped companies reduce support response time by up to 80% while maintaining high customer satisfaction scores.</p>
-            <div className="flex gap-2">
-              <div className="bg-gray-100 rounded-md p-2 flex items-center justify-center flex-1">
-                <div className="text-center">
-                  <p className="text-xl font-bold text-primary">-45%</p>
-                  <p className="text-xs text-gray-500">Support Costs</p>
-                </div>
-              </div>
-              <div className="bg-gray-100 rounded-md p-2 flex items-center justify-center flex-1">
-                <div className="text-center">
-                  <p className="text-xl font-bold text-primary">+28%</p>
-                  <p className="text-xs text-gray-500">CSAT Score</p>
-                </div>
-              </div>
+            <div className="bg-gray-50 p-4 rounded-md">
+              <h3 className="text-sm font-medium mb-2">2. Add to Your Website</h3>
+              <p className="text-sm text-gray-600">
+                Paste the code right before the closing &lt;/body&gt; tag on any page where you want the chat widget to appear.
+              </p>
+            </div>
+            
+            <div className="bg-gray-50 p-4 rounded-md">
+              <h3 className="text-sm font-medium mb-2">3. Test Your Integration</h3>
+              <p className="text-sm text-gray-600">
+                Open your website and verify the widget appears in the specified position. Try sending a test message.
+              </p>
             </div>
           </div>
           
-          <h3 className="text-sm font-medium mb-2">Supported Document Types</h3>
-          <div className="grid grid-cols-2 gap-3">
-            <svg className="rounded-md bg-gray-100 w-full h-24" viewBox="0 0 400 240" xmlns="http://www.w3.org/2000/svg">
-              <rect width="100%" height="100%" fill="#f5f7fa" />
-              <rect x="100" y="60" width="60" height="80" fill="#cbd5e0" />
-              <rect x="170" y="60" width="60" height="80" fill="#cbd5e0" />
-              <rect x="240" y="60" width="60" height="80" fill="#cbd5e0" />
-              <rect x="100" y="150" width="200" height="10" rx="2" fill="#a0aec0" />
-              <rect x="100" y="170" width="150" height="10" rx="2" fill="#a0aec0" />
-            </svg>
-            
-            <svg className="rounded-md bg-gray-100 w-full h-24" viewBox="0 0 400 240" xmlns="http://www.w3.org/2000/svg">
-              <rect width="100%" height="100%" fill="#f5f7fa" />
-              <rect x="130" y="60" width="140" height="100" rx="2" fill="#cbd5e0" />
-              <rect x="150" y="80" width="100" height="10" rx="2" fill="#a0aec0" />
-              <rect x="150" y="100" width="100" height="10" rx="2" fill="#a0aec0" />
-              <rect x="150" y="120" width="100" height="10" rx="2" fill="#a0aec0" />
-              <rect x="150" y="140" width="80" height="10" rx="2" fill="#a0aec0" />
-            </svg>
+          <div className="mt-4">
+            <h3 className="text-sm font-medium mb-2">Supported Document Types</h3>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              <div className="bg-gray-50 p-2 rounded text-center">
+                <div className="bg-primary bg-opacity-10 text-primary rounded-full w-8 h-8 mx-auto flex items-center justify-center mb-1">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/></svg>
+                </div>
+                <p className="text-sm">PDF</p>
+              </div>
+              <div className="bg-gray-50 p-2 rounded text-center">
+                <div className="bg-primary bg-opacity-10 text-primary rounded-full w-8 h-8 mx-auto flex items-center justify-center mb-1">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/></svg>
+                </div>
+                <p className="text-sm">DOCX</p>
+              </div>
+              <div className="bg-gray-50 p-2 rounded text-center">
+                <div className="bg-primary bg-opacity-10 text-primary rounded-full w-8 h-8 mx-auto flex items-center justify-center mb-1">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                </div>
+                <p className="text-sm">TXT</p>
+              </div>
+              <div className="bg-gray-50 p-2 rounded text-center">
+                <div className="bg-primary bg-opacity-10 text-primary rounded-full w-8 h-8 mx-auto flex items-center justify-center mb-1">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+                </div>
+                <p className="text-sm">HTML</p>
+              </div>
+            </div>
           </div>
         </Card>
       </div>

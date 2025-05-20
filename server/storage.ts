@@ -91,6 +91,8 @@ export class MemStorage implements IStorage {
       aiTone: "professional",
       responseLength: 3,
       greeting: "Hello! I'm your AI assistant powered by DeepSeek. I can help answer questions based on your knowledge base. How can I assist you today?",
+      aiInstructions: "Sound like a human and provide helpful, concise answers. Avoid unnecessary jargon or icons.",
+      embedCode: `<script src="https://cdn.example.com/chat-widget.js" data-widget-id="default"></script>`,
       deepSeekEnabled: true,
       lastUpdated: new Date(),
     };
@@ -292,6 +294,8 @@ export class MemStorage implements IStorage {
       aiTone: "professional",
       responseLength: 3,
       greeting: "Hello! I'm your AI assistant. How can I help you today?",
+      aiInstructions: "Sound like a human and provide helpful, concise answers.",
+      embedCode: `<script src="https://cdn.example.com/chat-widget.js" data-widget-id="default"></script>`,
       deepSeekEnabled: true,
       lastUpdated: new Date(),
     };

@@ -12,6 +12,8 @@ export interface WidgetConfig {
   aiTone: string;
   responseLength: number;
   greeting: string;
+  aiInstructions?: string;
+  embedCode?: string;
   deepSeekEnabled: boolean;
   lastUpdated: Date;
 }

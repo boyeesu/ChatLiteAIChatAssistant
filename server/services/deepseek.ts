@@ -21,12 +21,33 @@ interface DeepSeekResponse {
   };
 }
 
-// Helper function to construct prompts based on AI tone and response length
+// Helper function to construct prompts based on AI tone, response length, and custom instructions
 export function constructPrompt(
   query: string,
   context: string[],
   config: WidgetConfig
 ): string {
+  // Check for custom instructions first - highest priority
+  if (config.aiInstructions) {
+    // Start with a base prompt and add custom instructions
+    let systemPrompt = `You are an AI assistant for customer support. 
+${config.aiInstructions}
+
+`;
+    
+    // Add context information if available
+    if (context.length > 0) {
+      systemPrompt += `\nHere is relevant information from the knowledge base:\n`;
+      context.forEach((piece, index) => {
+        systemPrompt += `\nContext ${index + 1}:\n${piece}\n`;
+      });
+      systemPrompt += `\nBase your answer on this information. If the information doesn't contain the answer, say so and provide a general response.`;
+    }
+    
+    return systemPrompt;
+  }
+  
+  // If no custom instructions, use the tone and length settings
   // Define tone modifiers based on the selected AI tone
   const toneModifiers: Record<string, string> = {
     professional: "in a professional, business-like manner",

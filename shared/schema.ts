@@ -96,6 +96,8 @@ export const widgetConfig = pgTable("widget_config", {
   aiTone: text("ai_tone").notNull().default("professional"),
   responseLength: integer("response_length").notNull().default(3),
   greeting: text("greeting").notNull().default("Hello! I'm your AI assistant. How can I help you today?"),
+  aiInstructions: text("ai_instructions"),
+  embedCode: text("embed_code"),
   deepSeekEnabled: boolean("deepseek_enabled").notNull().default(true),
   lastUpdated: timestamp("last_updated").defaultNow().notNull(),
 });
