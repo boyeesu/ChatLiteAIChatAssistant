@@ -24,12 +24,14 @@ export default function Home() {
               <h1 className="text-xl font-bold text-gray-800">AI Chat Assistant</h1>
             </div>
             <nav>
-              <Link href="/admin">
-                <Button variant="ghost" className="flex items-center gap-2 text-gray-600 hover:text-primary">
-                  <Settings className="h-4 w-4" />
-                  Admin Dashboard
-                </Button>
-              </Link>
+              <Button 
+                variant="ghost" 
+                className="flex items-center gap-2 text-gray-600 hover:text-primary"
+                onClick={() => window.location.href = "/admin"}
+              >
+                <Settings className="h-4 w-4" />
+                Admin Dashboard
+              </Button>
             </nav>
           </div>
         </header>
@@ -98,9 +100,12 @@ export default function Home() {
               </div>
               
               <div className="flex gap-6">
-                <Link href="/admin">
-                  <a className="text-gray-300 hover:text-white">Admin Dashboard</a>
-                </Link>
+                <span 
+                  className="text-gray-300 hover:text-white cursor-pointer"
+                  onClick={() => window.location.href = "/admin"}
+                >
+                  Admin Dashboard
+                </span>
                 <a href="#" className="text-gray-300 hover:text-white">Documentation</a>
                 <a href="#" className="text-gray-300 hover:text-white">Privacy Policy</a>
               </div>
