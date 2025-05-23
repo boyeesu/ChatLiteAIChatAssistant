@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -92,4 +93,57 @@ export default function AIConfiguration() {
             </Select>
           </div>
 
-          <div
+          <div className="space-y-2">
+            <Label>Response Length</Label>
+            <div className="pt-2">
+              <Slider
+                value={[localConfig.responseLength]}
+                onValueChange={([value]) => handleChange({ responseLength: value })}
+                min={1}
+                max={5}
+                step={1}
+                className="w-full"
+              />
+              <div className="mt-1 text-sm text-gray-500">
+                {getResponseLengthLabel(localConfig.responseLength)}
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="greeting">Welcome Message</Label>
+            <Textarea
+              id="greeting"
+              value={localConfig.greeting}
+              onChange={(e) => handleChange({ greeting: e.target.value })}
+              placeholder="Enter a welcome message for users"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="instructions">AI Instructions</Label>
+            <Textarea
+              id="instructions"
+              value={localConfig.aiInstructions || ''}
+              onChange={(e) => handleChange({ aiInstructions: e.target.value })}
+              placeholder="Enter custom instructions for the AI"
+            />
+          </div>
+
+          <div className="flex items-center justify-between">
+            <Label htmlFor="deepseek">Enable DeepSeek</Label>
+            <Switch
+              id="deepseek"
+              checked={localConfig.deepSeekEnabled}
+              onCheckedChange={(checked) => handleChange({ deepSeekEnabled: checked })}
+            />
+          </div>
+
+          <Button type="submit" disabled={isUpdating}>
+            {isUpdating ? 'Saving...' : 'Save Changes'}
+          </Button>
+        </form>
+      </CardContent>
+    </Card>
+  );
+}
