@@ -10,11 +10,11 @@ app.use((req, res, next) => {
 
 // Check if HuggingFace token is available
 if (!process.env.HUGGING_FACE_TOKEN) {
-  console.warn("\x1b[33m%s\x1b[0m", "⚠️ No HUGGING_FACE_TOKEN environment variable found!");
+  console.warn("\x1b[33m%s\x1b[0m", "⚠️ No API token environment variable found!");
   console.warn("\x1b[33m%s\x1b[0m", "⚠️ The application will use fallback simple embeddings and responses.");
-  console.warn("\x1b[33m%s\x1b[0m", "⚠️ For full functionality, please set a Hugging Face token in Secrets.");
+  console.warn("\x1b[33m%s\x1b[0m", "⚠️ For full functionality, please set an API token in Secrets.");
 } else {
-  console.log("\x1b[32m%s\x1b[0m", "✅ Hugging Face token found! Using deepseek-llm-7b-chat for AI responses.");
+  console.log("\x1b[32m%s\x1b[0m", "✅ API token found! Using DeepSeek API for AI responses.");
 }
 
   const start = Date.now();

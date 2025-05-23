@@ -2,11 +2,11 @@ import { Embedding, WidgetConfig } from "@shared/schema";
 import { storage } from "../storage";
 import { queryDeepSeek } from "./deepseek";
 
-// Import the HfInference
+// Import the HfInference for embeddings only
 import { HfInference } from "@huggingface/inference";
 
-// Initialize Hugging Face client
-const HF_TOKEN = process.env.HUGGING_FACE_TOKEN || ""; // Set this through Secrets
+// Initialize Hugging Face client for embeddings
+const HF_TOKEN = process.env.HUGGING_FACE_TOKEN || ""; // Set this through Secrets 
 const inference = new HfInference(HF_TOKEN);
 const EMBEDDING_MODEL = "sentence-transformers/all-MiniLM-L6-v2"; // More lightweight than DeepSeek for embeddings
 

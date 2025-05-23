@@ -1,14 +1,12 @@
 
 import { WidgetConfig } from "@shared/schema";
-import { HfInference } from "@huggingface/inference";
+import axios from "axios";
 
-// Initialize Hugging Face client
-// For production use, this should be stored in an environment variable
-const HF_TOKEN = process.env.HUGGING_FACE_TOKEN || ""; // Set this through Secrets
-const inference = new HfInference(HF_TOKEN);
-const MODEL_ID = "deepseek-ai/deepseek-llm-7b-chat"; // Using a different DeepSeek model that's available on Hugging Face
+// Initialize DeepSeek client
+const DEEPSEEK_API_KEY = process.env.HUGGING_FACE_TOKEN || ""; // Reusing the existing secret
+const DEEPSEEK_API_URL = "https://api.deepseek.com/v1/chat/completions";
 
-// Function to query DeepSeek API via Hugging Face
+// Function to query DeepSeek API
 export async function queryDeepSeek(
   userQuery: string,
   contextChunks: string[],
@@ -16,62 +14,54 @@ export async function queryDeepSeek(
 ): Promise<string> {
   try {
     // Skip API call if no token is provided (for development)
-    if (!HF_TOKEN) {
-      console.warn("No Hugging Face token provided. Using simulated response.");
+    if (!DEEPSEEK_API_KEY) {
+      console.warn("No DeepSeek API key provided. Using simulated response.");
       return simulateResponse(userQuery, contextChunks, config);
     }
 
     // Formulate a prompt that incorporates retrieved context
-    let prompt = "";
-
+    let systemMessage = "";
+    
     if (contextChunks.length > 0) {
-      prompt = `
-I need to answer the following user query using the provided context information:
-
-USER QUERY: ${userQuery}
+      systemMessage = `You are an AI assistant powered by DeepSeek. Your task is to provide helpful, accurate responses based on the context provided.
+Use the following context information to answer the user's query.
+If the context doesn't contain relevant information, acknowledge that and provide a general response.
 
 RELEVANT CONTEXT:
-${contextChunks.join('\n\n---\n\n')}
-
-Based on the above context information, provide a comprehensive and helpful response to the user's query.
-If the context doesn't contain relevant information to answer the query, acknowledge that and provide a general response.
-`;
+${contextChunks.join('\n\n---\n\n')}`;
     } else {
-      prompt = `
-I need to answer the following user query:
-
-USER QUERY: ${userQuery}
-
-I don't have specific context from our knowledge base for this query, but please provide a helpful general response.
-`;
+      systemMessage = `You are an AI assistant powered by DeepSeek. Your task is to provide helpful, accurate responses based on your knowledge.
+If you don't know the answer to a question, acknowledge that and provide a general response.`;
     }
 
-    // Call DeepSeek via Hugging Face
-    const response = await inference.textGeneration({
-      model: MODEL_ID,
-      inputs: prompt,
-      parameters: {
-        max_new_tokens: config.responseLength <= 2 ? 100 : config.responseLength >= 4 ? 300 : 200,
+    // Call DeepSeek API
+    const response = await axios.post(
+      DEEPSEEK_API_URL,
+      {
+        model: "deepseek-chat",
+        messages: [
+          { role: "system", content: systemMessage },
+          { role: "user", content: userQuery }
+        ],
         temperature: 0.7,
-        top_p: 0.9,
-        do_sample: true,
-        return_full_text: false
+        max_tokens: config.responseLength <= 2 ? 100 : config.responseLength >= 4 ? 300 : 200,
+        top_p: 0.9
+      },
+      {
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${DEEPSEEK_API_KEY}`
+        }
       }
-    });
+    );
 
-    let result = response.generated_text || 
+    // Extract the response content
+    const result = response.data.choices[0].message.content || 
       "I apologize, but I couldn't generate a response. Please try asking your question differently.";
-
-    // Clean up the response if needed
-    if (result.includes("USER QUERY:") || result.includes("RELEVANT CONTEXT:")) {
-      // Extract only the answer part if the model repeats the prompt
-      result = result.split("Based on the above context information,").pop() || result;
-      result = result.split("USER QUERY:").shift() || result;
-    }
 
     return result.trim();
   } catch (error) {
-    console.error("Error generating response:", error);
+    console.error("Error generating response with DeepSeek API:", error);
     return simulateResponse(userQuery, contextChunks, config);
   }
 }
