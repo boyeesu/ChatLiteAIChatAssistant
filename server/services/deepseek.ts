@@ -6,7 +6,7 @@ import { HfInference } from "@huggingface/inference";
 // For production use, this should be stored in an environment variable
 const HF_TOKEN = process.env.HUGGING_FACE_TOKEN || ""; // Set this through Secrets
 const inference = new HfInference(HF_TOKEN);
-const MODEL_ID = "deepseek-ai/DeepSeek-V3-Base";
+const MODEL_ID = "deepseek-ai/deepseek-llm-7b-chat"; // Using a different DeepSeek model that's available on Hugging Face
 
 // Function to query DeepSeek API via Hugging Face
 export async function queryDeepSeek(
@@ -55,6 +55,7 @@ I don't have specific context from our knowledge base for this query, but please
         temperature: 0.7,
         top_p: 0.9,
         do_sample: true,
+        return_full_text: false
       }
     });
 

@@ -14,7 +14,7 @@ if (!process.env.HUGGING_FACE_TOKEN) {
   console.warn("\x1b[33m%s\x1b[0m", "⚠️ The application will use fallback simple embeddings and responses.");
   console.warn("\x1b[33m%s\x1b[0m", "⚠️ For full functionality, please set a Hugging Face token in Secrets.");
 } else {
-  console.log("\x1b[32m%s\x1b[0m", "✅ Hugging Face token found! Using DeepSeek-V3-Base for AI responses.");
+  console.log("\x1b[32m%s\x1b[0m", "✅ Hugging Face token found! Using deepseek-llm-7b-chat for AI responses.");
 }
 
   const start = Date.now();
