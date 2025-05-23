@@ -1,19 +1,31 @@
-import { WidgetConfig } from "@shared/schema";
 
-// Function to query DeepSeek API (or simulate responses for demo)
+import { WidgetConfig } from "@shared/schema";
+import { HfInference } from "@huggingface/inference";
+
+// Initialize Hugging Face client
+// For production use, this should be stored in an environment variable
+const HF_TOKEN = process.env.HUGGING_FACE_TOKEN || ""; // Set this through Secrets
+const inference = new HfInference(HF_TOKEN);
+const MODEL_ID = "deepseek-ai/DeepSeek-V3-Base";
+
+// Function to query DeepSeek API via Hugging Face
 export async function queryDeepSeek(
   userQuery: string,
   contextChunks: string[],
   config: WidgetConfig
 ): Promise<string> {
-  // In a real implementation, this would call the DeepSeek API
-  // For demo purposes, we're simulating a response based on the context
+  try {
+    // Skip API call if no token is provided (for development)
+    if (!HF_TOKEN) {
+      console.warn("No Hugging Face token provided. Using simulated response.");
+      return simulateResponse(userQuery, contextChunks, config);
+    }
 
-  // Formulate a prompt that incorporates retrieved context
-  let prompt = "";
+    // Formulate a prompt that incorporates retrieved context
+    let prompt = "";
 
-  if (contextChunks.length > 0) {
-    prompt = `
+    if (contextChunks.length > 0) {
+      prompt = `
 I need to answer the following user query using the provided context information:
 
 USER QUERY: ${userQuery}
@@ -24,85 +36,74 @@ ${contextChunks.join('\n\n---\n\n')}
 Based on the above context information, provide a comprehensive and helpful response to the user's query.
 If the context doesn't contain relevant information to answer the query, acknowledge that and provide a general response.
 `;
-  } else {
-    prompt = `
+    } else {
+      prompt = `
 I need to answer the following user query:
 
 USER QUERY: ${userQuery}
 
 I don't have specific context from our knowledge base for this query, but please provide a helpful general response.
 `;
-  }
-
-  // In a real implementation, you would call the DeepSeek API here with the prompt
-  // const deepSeekResponse = await callDeepSeekAPI(prompt, config);
-
-  // For demo, generate a simulated response
-  let response;
-
-  try {
-    if (contextChunks.length > 0) {
-      // Extract key phrases from the context to make the response seem more informed
-      const contextSample = contextChunks[0].substring(0, 150);
-      const keywords = extractKeywords(contextSample);
-
-      // Create a response that appears to be based on the context
-      if (userQuery.toLowerCase().includes("how") || userQuery.toLowerCase().includes("what")) {
-        response = `Based on our knowledge base, ${keywords.join(", ")} are key elements to consider. ${contextChunks[0].split('.')[0] || "This concept is important to understand"}.`;
-      } else if (userQuery.toLowerCase().includes("why")) {
-        response = `The reason involves ${keywords.join(" and ") || "several factors"}. According to our information, ${contextChunks[0].split('.')[0] || "this is a key consideration"}.`;
-      } else {
-        response = `I found information about ${keywords[0] || "your topic"} in our knowledge base. ${contextChunks[0].split('.')[0] || "This information may be helpful to you"}.`;
-      }
-
-      // Add a second point from another context chunk if available
-      if (contextChunks.length > 1) {
-        const secondPoint = contextChunks[1].split('.')[0];
-        if (secondPoint && secondPoint.length > 5) {
-          response += ` Additionally, ${secondPoint}.`;
-        }
-      }
-    } else {
-      // Generic responses when no context is available
-      const genericResponses = [
-        "I don't have specific information about that in our knowledge base. Could you provide more details or ask something else?",
-        "I couldn't find detailed information about that in our current documents. Would you like to know about something else?",
-        "That's beyond the scope of our current knowledge base. Can I assist you with something else?",
-        "Unfortunately, our documents don't contain information to answer that question accurately. Could you try rephrasing or asking about another topic?"
-      ];
-
-      response = genericResponses[Math.floor(Math.random() * genericResponses.length)];
     }
 
-    // Adjust response length based on config
-    if (config.responseLength <= 2) {
-      // Shorter response
-      response = response.split('.')[0] + '.';
-    } else if (config.responseLength >= 4) {
-      // Longer, more detailed response
-      if (contextChunks.length > 2) {
-        const thirdPoint = contextChunks[2].split('.')[0];
-        if (thirdPoint && thirdPoint.length > 5) {
-          response += ` Furthermore, ${thirdPoint}.`;
-        }
+    // Call DeepSeek via Hugging Face
+    const response = await inference.textGeneration({
+      model: MODEL_ID,
+      inputs: prompt,
+      parameters: {
+        max_new_tokens: config.responseLength <= 2 ? 100 : config.responseLength >= 4 ? 300 : 200,
+        temperature: 0.7,
+        top_p: 0.9,
+        do_sample: true,
       }
-      response += "\n\nIs there anything else you'd like to know about this topic?";
+    });
+
+    let result = response.generated_text || 
+      "I apologize, but I couldn't generate a response. Please try asking your question differently.";
+
+    // Clean up the response if needed
+    if (result.includes("USER QUERY:") || result.includes("RELEVANT CONTEXT:")) {
+      // Extract only the answer part if the model repeats the prompt
+      result = result.split("Based on the above context information,").pop() || result;
+      result = result.split("USER QUERY:").shift() || result;
     }
 
-    // Safety check for any missing or incomplete text
-    if (!response || response.includes("undefined") || response.trim().length < 10) {
-      response = "I apologize, but I couldn't generate a proper response. Please try asking your question in a different way.";
-    }
-
+    return result.trim();
   } catch (error) {
     console.error("Error generating response:", error);
-    response = "I apologize for the error. I'm unable to provide a proper response at the moment. Please try again later.";
+    return simulateResponse(userQuery, contextChunks, config);
   }
+}
 
-  // Simulate API delay
-  await new Promise(resolve => setTimeout(resolve, 1000));
+// Fallback function for when API calls fail or during development
+function simulateResponse(
+  userQuery: string,
+  contextChunks: string[],
+  config: WidgetConfig
+): string {
+  // Extract key phrases from the context to make the response seem more informed
+  if (contextChunks.length > 0) {
+    const contextSample = contextChunks[0].substring(0, 150);
+    const keywords = extractKeywords(contextSample);
 
-  return response;
+    // Create a response that appears to be based on the context
+    if (userQuery.toLowerCase().includes("how") || userQuery.toLowerCase().includes("what")) {
+      return `Based on our knowledge base, ${keywords.join(", ")} are key elements to consider. ${contextChunks[0].split('.')[0] || "This concept is important to understand"}.`;
+    } else if (userQuery.toLowerCase().includes("why")) {
+      return `The reason involves ${keywords.join(" and ") || "several factors"}. According to our information, ${contextChunks[0].split('.')[0] || "this is a key consideration"}.`;
+    } else {
+      return `I found information about ${keywords[0] || "your topic"} in our knowledge base. ${contextChunks[0].split('.')[0] || "This information may be helpful to you"}.`;
+    }
+  } else {
+    const genericResponses = [
+      "I don't have specific information about that in our knowledge base. Could you provide more details or ask something else?",
+      "I couldn't find detailed information about that in our current documents. Would you like to know about something else?",
+      "That's beyond the scope of our current knowledge base. Can I assist you with something else?",
+      "Unfortunately, our documents don't contain information to answer that question accurately. Could you try rephrasing or asking about another topic?"
+    ];
+
+    return genericResponses[Math.floor(Math.random() * genericResponses.length)];
+  }
 }
 
 // Helper function to extract potential keywords from text

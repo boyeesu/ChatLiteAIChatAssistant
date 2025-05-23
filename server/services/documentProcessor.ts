@@ -1,7 +1,7 @@
 
 import { InsertDocument } from "@shared/schema";
 import { storage } from "../storage";
-import { createSimpleEmbedding } from "./rag";
+import { createEmbedding } from "./rag";
 
 // Supported file types
 const SUPPORTED_FILE_TYPES = ['pdf', 'txt', 'docx', 'html', 'md'];
@@ -136,7 +136,7 @@ export async function storeDocumentWithEmbeddings(
     for (let i = 0; i < chunks.length; i++) {
       try {
         const chunk = chunks[i];
-        const embedding = createSimpleEmbedding(chunk);
+        const embedding = await createEmbedding(chunk);
         
         await storage.createEmbedding({
           documentId: document.id,

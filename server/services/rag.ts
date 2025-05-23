@@ -2,8 +2,46 @@ import { Embedding, WidgetConfig } from "@shared/schema";
 import { storage } from "../storage";
 import { queryDeepSeek } from "./deepseek";
 
+// Import the HfInference
+import { HfInference } from "@huggingface/inference";
+
+// Initialize Hugging Face client
+const HF_TOKEN = process.env.HUGGING_FACE_TOKEN || ""; // Set this through Secrets
+const inference = new HfInference(HF_TOKEN);
+const EMBEDDING_MODEL = "sentence-transformers/all-MiniLM-L6-v2"; // More lightweight than DeepSeek for embeddings
+
+/**
+ * Create embeddings using Hugging Face API or fallback to simple embedding.
+ * @param text The input text to embed.
+ * @returns The embedding vector.
+ */
+export async function createEmbedding(text: string): Promise<number[]> {
+  if (!isValidString(text)) {
+    throw new Error("Invalid input: Text must be a non-empty string");
+  }
+
+  // If HF_TOKEN is set, use Hugging Face API
+  if (HF_TOKEN) {
+    try {
+      const result = await inference.featureExtraction({
+        model: EMBEDDING_MODEL,
+        inputs: text
+      });
+      return Array.isArray(result) ? result : createSimpleEmbedding(text);
+    } catch (error) {
+      console.error("Error creating embedding with Hugging Face:", error);
+      // Fallback to simple embedding
+      return createSimpleEmbedding(text);
+    }
+  } else {
+    // No API token, use simple embedding
+    return createSimpleEmbedding(text);
+  }
+}
+
 /**
  * Create a simple embedding for the given text.
+ * This is a fallback when the API is unavailable.
  * @param text The input text to embed.
  * @returns The embedding vector.
  */
@@ -13,7 +51,7 @@ export function createSimpleEmbedding(text: string): number[] {
   }
 
   const normalizedText = text.toLowerCase().trim();
-  const EMBEDDING_DIMENSION = 1536;
+  const EMBEDDING_DIMENSION = 384; // Matching the dimension of the MiniLM model
   const vector: number[] = new Array(EMBEDDING_DIMENSION).fill(0);
 
   const words = normalizedText.split(/\s+/);
@@ -128,7 +166,8 @@ export async function findSimilarChunks(
     const documents = await storage.getAllDocuments();
     if (documents.length === 0) return [];
 
-    const queryEmbedding = createSimpleEmbedding(query);
+    // Get query embedding - now using async function
+    const queryEmbedding = await createEmbedding(query);
     const embeddingsWithScores: Array<{
       embedding: Embedding;
       similarity: number;
