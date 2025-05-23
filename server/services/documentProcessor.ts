@@ -1,103 +1,109 @@
-import { InsertDocument, Document } from "@shared/schema";
 
-// Function to create embeddings for a document
+import { InsertDocument } from "@shared/schema";
+import { storage } from "../storage";
+import { createSimpleEmbedding } from "./rag";
+
+// Supported file types
+const SUPPORTED_FILE_TYPES = ['pdf', 'txt', 'docx', 'html', 'md'];
+
+// Maximum file size in KB (50MB)
+const MAX_FILE_SIZE_KB = 50 * 1024;
+
+// Check if file type is supported
+export function isFileTypeSupported(fileType: string): boolean {
+  return SUPPORTED_FILE_TYPES.includes(fileType.toLowerCase());
+}
+
+// Check if file size is valid
+export function isFileSizeValid(fileSizeKb: number): boolean {
+  return fileSizeKb <= MAX_FILE_SIZE_KB;
+}
+
+// Process document and prepare metadata
 export async function processDocument(
   fileName: string,
   fileType: string,
   content: string,
   fileSizeKb: number
 ): Promise<InsertDocument> {
-  // In a real implementation, this would parse different document types
-  // such as PDF, DOCX, TXT, etc. using appropriate libraries
-  
-  // For simplicity in this implementation, we'll just use the raw content
-  // and extract basic text content
-
-  let extractedContent = content;
-
-  // Process different file types (in a real app, use specific libraries)
-  switch (fileType.toLowerCase()) {
-    case 'pdf':
-      // Using pdf.js would be implemented here in a real application
-      // For now, we'll just use the provided content
-      break;
-      
-    case 'docx':
-      // Using docx parser would be implemented here in a real application
-      break;
-      
-    case 'txt':
-      // Plain text can be used directly
-      break;
-      
-    case 'html':
-      // Extract text from HTML
-      extractedContent = stripHtmlTags(content);
-      break;
-      
-    default:
-      // Default handling for other file types
-      break;
+  // Validate inputs
+  if (!fileName || !fileType || !content) {
+    throw new Error("Missing required document properties");
   }
-
-  // Create the document object to be stored
-  const document: InsertDocument = {
+  
+  // In a real implementation, this would include more processing
+  // such as extracting text from PDFs, parsing HTML, etc.
+  return {
     fileName,
-    fileType,
+    fileType: fileType.toLowerCase(),
     fileSizeKb,
-    content: extractedContent,
+    content
   };
-
-  return document;
 }
 
-// Function to chunk the document content for RAG
-export function chunkDocumentContent(
-  document: Document,
-  chunkSize: number = 500,
-  chunkOverlap: number = 100
-): string[] {
+// Chunk the content of a document for embedding and retrieval
+export function chunkDocumentContent(document: { content: string; id: number }): string[] {
+  if (!document || !document.content) {
+    return [];
+  }
+  
   const content = document.content;
   const chunks: string[] = [];
   
-  // Improved chunking strategy that tries to respect sentence boundaries
-  // This helps create more meaningful chunks for RAG
+  // Improved chunking with smarter boundaries
+  // This implementation splits by paragraphs first, then by sentences if paragraphs are too large
   
-  // Split content into sentences
-  const sentences = content.match(/[^.!?]+[.!?]+/g) || [];
+  // Split by paragraphs (double newlines)
+  const paragraphs = content.split(/\n\s*\n/);
   
-  if (sentences.length === 0) {
-    // Fallback to character-based chunking if sentence splitting fails
-    for (let i = 0; i < content.length; i += chunkSize - chunkOverlap) {
-      const chunk = content.substring(i, i + chunkSize);
-      if (chunk.trim()) {
-        chunks.push(chunk);
-      }
-    }
-    return chunks;
-  }
+  // Ideal chunk size
+  const TARGET_CHUNK_SIZE = 1000; // characters
+  const MAX_CHUNK_SIZE = 1500; // maximum size before forced split
   
-  // Group sentences into chunks that are approximately chunkSize characters
   let currentChunk = "";
   
-  for (const sentence of sentences) {
-    // If adding this sentence would exceed the chunk size and we already have content,
-    // save the current chunk and start a new one
-    if (currentChunk.length + sentence.length > chunkSize && currentChunk.length > 0) {
+  for (const paragraph of paragraphs) {
+    // Skip empty paragraphs
+    if (!paragraph.trim()) continue;
+    
+    // If adding this paragraph would make chunk too large, save current chunk
+    if (currentChunk && (currentChunk.length + paragraph.length > MAX_CHUNK_SIZE)) {
       chunks.push(currentChunk.trim());
+      currentChunk = "";
+    }
+    
+    // If paragraph itself is larger than target size, split into sentences
+    if (paragraph.length > TARGET_CHUNK_SIZE) {
+      // Split by sentences (period followed by space or newline)
+      const sentences = paragraph.split(/\.\s+|\.\n/);
       
-      // Start new chunk with overlap - include the last few sentences from previous chunk
-      const sentencesInCurrentChunk = currentChunk.match(/[^.!?]+[.!?]+/g) || [];
-      const overlapSentences = sentencesInCurrentChunk.slice(-2).join(" "); // Last 2 sentences
-      
-      currentChunk = overlapSentences + " " + sentence;
+      for (const sentence of sentences) {
+        if (!sentence.trim()) continue;
+        
+        // Add period back to the sentence if it was removed during splitting
+        const fullSentence = sentence.endsWith('.') ? sentence : sentence + '.';
+        
+        // If adding this sentence would make chunk too large, save current chunk
+        if (currentChunk && (currentChunk.length + fullSentence.length > MAX_CHUNK_SIZE)) {
+          chunks.push(currentChunk.trim());
+          currentChunk = "";
+        }
+        
+        currentChunk += " " + fullSentence;
+      }
     } else {
-      // Add sentence to current chunk
-      currentChunk += " " + sentence;
+      // Add the whole paragraph
+      currentChunk += " " + paragraph;
+      
+      // If we've reached target size, save the chunk
+      if (currentChunk.length >= TARGET_CHUNK_SIZE) {
+        chunks.push(currentChunk.trim());
+        currentChunk = "";
+      }
     }
   }
   
-  // Add the last chunk if it's not empty
+  // Don't forget the last chunk
   if (currentChunk.trim()) {
     chunks.push(currentChunk.trim());
   }
@@ -105,19 +111,48 @@ export function chunkDocumentContent(
   return chunks;
 }
 
-// Helper function to strip HTML tags
-function stripHtmlTags(html: string): string {
-  return html.replace(/<[^>]*>?/gm, '');
-}
-
-// Function to verify file type is supported
-export function isFileTypeSupported(fileType: string): boolean {
-  const supportedTypes = ['pdf', 'txt', 'docx', 'html'];
-  return supportedTypes.includes(fileType.toLowerCase());
-}
-
-// Function to verify file size is within limits
-export function isFileSizeValid(fileSizeKb: number): boolean {
-  const maxSizeKb = 50 * 1024; // 50MB in KB
-  return fileSizeKb <= maxSizeKb;
+// Store document with its embeddings
+export async function storeDocumentWithEmbeddings(
+  fileName: string,
+  fileType: string,
+  content: string,
+  fileSizeKb: number
+): Promise<number> {
+  try {
+    // Create and store document
+    const documentData = await processDocument(
+      fileName,
+      fileType,
+      content,
+      fileSizeKb
+    );
+    
+    const document = await storage.createDocument(documentData);
+    
+    // Chunk the document content
+    const chunks = chunkDocumentContent(document);
+    
+    // Create and store embeddings for each chunk
+    for (let i = 0; i < chunks.length; i++) {
+      try {
+        const chunk = chunks[i];
+        const embedding = createSimpleEmbedding(chunk);
+        
+        await storage.createEmbedding({
+          documentId: document.id,
+          chunkIndex: i,
+          content: chunk,
+          embedding: embedding,
+        });
+      } catch (error) {
+        console.error(`Failed to create embedding for chunk ${i}:`, error);
+        // Continue with other chunks
+      }
+    }
+    
+    return document.id;
+  } catch (error) {
+    console.error("Error storing document with embeddings:", error);
+    throw error;
+  }
 }
