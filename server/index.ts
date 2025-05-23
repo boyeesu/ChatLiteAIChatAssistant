@@ -8,13 +8,15 @@ app.use(express.urlencoded({ extended: false }));
 
 app.use((req, res, next) => {
 
-// Check if HuggingFace token is available
-if (!process.env.HUGGING_FACE_TOKEN) {
+// Check if DeepSeek or HuggingFace token is available
+if (!process.env.DEEPSEEK_API_KEY && !process.env.HUGGING_FACE_TOKEN) {
   console.warn("\x1b[33m%s\x1b[0m", "⚠️ No API token environment variable found!");
   console.warn("\x1b[33m%s\x1b[0m", "⚠️ The application will use fallback simple embeddings and responses.");
-  console.warn("\x1b[33m%s\x1b[0m", "⚠️ For full functionality, please set an API token in Secrets.");
+  console.warn("\x1b[33m%s\x1b[0m", "⚠️ For full functionality, please set a DEEPSEEK_API_KEY in Secrets.");
+} else if (process.env.DEEPSEEK_API_KEY) {
+  console.log("\x1b[32m%s\x1b[0m", "✅ DeepSeek API key found! Using DeepSeek API for AI responses.");
 } else {
-  console.log("\x1b[32m%s\x1b[0m", "✅ API token found! Using DeepSeek API for AI responses.");
+  console.log("\x1b[32m%s\x1b[0m", "✅ Hugging Face token found, but for best results, add a DEEPSEEK_API_KEY in Secrets.");
 }
 
   const start = Date.now();

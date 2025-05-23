@@ -3,7 +3,7 @@ import { WidgetConfig } from "@shared/schema";
 import axios from "axios";
 
 // Initialize DeepSeek client
-const DEEPSEEK_API_KEY = process.env.HUGGING_FACE_TOKEN || ""; // Reusing the existing secret
+const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY || process.env.HUGGING_FACE_TOKEN || ""; // Try dedicated key first, fall back to HF token
 const DEEPSEEK_API_URL = "https://api.deepseek.com/v1/chat/completions";
 
 // Function to query DeepSeek API
