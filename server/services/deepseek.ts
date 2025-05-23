@@ -40,46 +40,63 @@ I don't have specific context from our knowledge base for this query, but please
   // For demo, generate a simulated response
   let response;
 
-  if (contextChunks.length > 0) {
-    // Extract key phrases from the context to make the response seem more informed
-    const contextSample = contextChunks[0].substring(0, 150);
-    const keywords = extractKeywords(contextSample);
+  try {
+    if (contextChunks.length > 0) {
+      // Extract key phrases from the context to make the response seem more informed
+      const contextSample = contextChunks[0].substring(0, 150);
+      const keywords = extractKeywords(contextSample);
 
-    // Create a response that appears to be based on the context
-    if (userQuery.toLowerCase().includes("how") || userQuery.toLowerCase().includes("what")) {
-      response = `Based on our knowledge base, ${keywords.join(", ")} are key elements to consider. ${contextChunks[0].split('.')[0]}.`;
-    } else if (userQuery.toLowerCase().includes("why")) {
-      response = `The reason involves ${keywords.join(" and ")}. According to our information, ${contextChunks[0].split('.')[0]}.`;
+      // Create a response that appears to be based on the context
+      if (userQuery.toLowerCase().includes("how") || userQuery.toLowerCase().includes("what")) {
+        response = `Based on our knowledge base, ${keywords.join(", ")} are key elements to consider. ${contextChunks[0].split('.')[0] || "This concept is important to understand"}.`;
+      } else if (userQuery.toLowerCase().includes("why")) {
+        response = `The reason involves ${keywords.join(" and ") || "several factors"}. According to our information, ${contextChunks[0].split('.')[0] || "this is a key consideration"}.`;
+      } else {
+        response = `I found information about ${keywords[0] || "your topic"} in our knowledge base. ${contextChunks[0].split('.')[0] || "This information may be helpful to you"}.`;
+      }
+
+      // Add a second point from another context chunk if available
+      if (contextChunks.length > 1) {
+        const secondPoint = contextChunks[1].split('.')[0];
+        if (secondPoint && secondPoint.length > 5) {
+          response += ` Additionally, ${secondPoint}.`;
+        }
+      }
     } else {
-      response = `I found information about ${keywords[0] || "your topic"} in our knowledge base. ${contextChunks[0].split('.')[0]}.`;
+      // Generic responses when no context is available
+      const genericResponses = [
+        "I don't have specific information about that in our knowledge base. Could you provide more details or ask something else?",
+        "I couldn't find detailed information about that in our current documents. Would you like to know about something else?",
+        "That's beyond the scope of our current knowledge base. Can I assist you with something else?",
+        "Unfortunately, our documents don't contain information to answer that question accurately. Could you try rephrasing or asking about another topic?"
+      ];
+
+      response = genericResponses[Math.floor(Math.random() * genericResponses.length)];
     }
 
-    // Add a second point from another context chunk if available
-    if (contextChunks.length > 1) {
-      response += ` Additionally, ${contextChunks[1].split('.')[0]}.`;
+    // Adjust response length based on config
+    if (config.responseLength <= 2) {
+      // Shorter response
+      response = response.split('.')[0] + '.';
+    } else if (config.responseLength >= 4) {
+      // Longer, more detailed response
+      if (contextChunks.length > 2) {
+        const thirdPoint = contextChunks[2].split('.')[0];
+        if (thirdPoint && thirdPoint.length > 5) {
+          response += ` Furthermore, ${thirdPoint}.`;
+        }
+      }
+      response += "\n\nIs there anything else you'd like to know about this topic?";
     }
-  } else {
-    // Generic responses when no context is available
-    const genericResponses = [
-      "I don't have specific information about that in our knowledge base. Could you provide more details or ask something else?",
-      "I couldn't find detailed information about that in our current documents. Would you like to know about something else?",
-      "That's beyond the scope of our current knowledge base. Can I assist you with something else?",
-      "Unfortunately, our documents don't contain information to answer that question accurately. Could you try rephrasing or asking about another topic?"
-    ];
 
-    response = genericResponses[Math.floor(Math.random() * genericResponses.length)];
-  }
-
-  // Adjust response length based on config
-  if (config.responseLength <= 2) {
-    // Shorter response
-    response = response.split('.')[0] + '.';
-  } else if (config.responseLength >= 4) {
-    // Longer, more detailed response
-    if (contextChunks.length > 2) {
-      response += ` Furthermore, ${contextChunks[2].split('.')[0]}.`;
+    // Safety check for any missing or incomplete text
+    if (!response || response.includes("undefined") || response.trim().length < 10) {
+      response = "I apologize, but I couldn't generate a proper response. Please try asking your question in a different way.";
     }
-    response += "\n\nIs there anything else you'd like to know about this topic?";
+
+  } catch (error) {
+    console.error("Error generating response:", error);
+    response = "I apologize for the error. I'm unable to provide a proper response at the moment. Please try again later.";
   }
 
   // Simulate API delay

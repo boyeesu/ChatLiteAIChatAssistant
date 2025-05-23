@@ -208,7 +208,7 @@ export async function generateRAGResponse(
     return await queryDeepSeek(query, contextChunks, config);
 
   } catch (error) {
-    logError("Error in RAG response generation", error, { query });
+    console.error("Error in RAG response generation", error, { query });
     return "I'm sorry, I encountered an error while searching for information. Please try again later.";
   }
 }
