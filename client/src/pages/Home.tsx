@@ -4,6 +4,9 @@ import { Link } from 'wouter';
 import { Helmet } from 'react-helmet';
 import { MessageCircle, Settings, FileText, Bot } from 'lucide-react';
 import { useWidgetContext } from '@/context/WidgetContext';
+import ChatWidget from '@/components/ChatWidget';
+import DocumentUploader from '@/components/DocumentUploader';
+import TextKnowledgeBase from '@/components/TextKnowledgeBase';
 
 export default function Home() {
   const { openChat } = useWidgetContext();
@@ -14,7 +17,7 @@ export default function Home() {
         <title>AI Chat Assistant | Powered by DeepSeek</title>
         <meta name="description" content="An intelligent AI chat assistant powered by DeepSeek with RAG capabilities for accurate and context-aware responses." />
       </Helmet>
-      
+
       <div className="min-h-screen flex flex-col">
         {/* Header */}
         <header className="bg-white border-b border-gray-200 py-4">
@@ -37,13 +40,13 @@ export default function Home() {
         </header>
 
         {/* Hero Section */}
-        <section className="flex-grow flex items-center justify-center bg-gradient-to-b from-white to-gray-50 py-16">
+        {/* <section className="flex-grow flex items-center justify-center bg-gradient-to-b from-white to-gray-50 py-16">
           <div className="container mx-auto px-4 text-center">
             <h2 className="text-4xl font-bold text-gray-900 mb-6">Intelligent Customer Support</h2>
             <p className="text-xl text-gray-600 max-w-2xl mx-auto mb-8">
               Powered by DeepSeek AI and RAG technology to provide accurate, context-aware responses based on your knowledge base.
             </p>
-            
+
             <Button
               size="lg"
               onClick={openChat}
@@ -52,7 +55,7 @@ export default function Home() {
               <MessageCircle className="mr-2 h-5 w-5" />
               Try the Chat Assistant
             </Button>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto mt-12">
               <div className="bg-white p-6 rounded-lg shadow-md">
                 <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center text-primary mb-4 mx-auto">
@@ -63,7 +66,7 @@ export default function Home() {
                   Provide 24/7 support to your customers with our AI assistant that responds instantly.
                 </p>
               </div>
-              
+
               <div className="bg-white p-6 rounded-lg shadow-md">
                 <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center text-primary mb-4 mx-auto">
                   <FileText className="h-6 w-6" />
@@ -73,7 +76,7 @@ export default function Home() {
                   Upload your own documents to customize the AI's knowledge base for accurate responses.
                 </p>
               </div>
-              
+
               <div className="bg-white p-6 rounded-lg shadow-md">
                 <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center text-primary mb-4 mx-auto">
                   <Bot className="h-6 w-6" />
@@ -83,6 +86,17 @@ export default function Home() {
                   Configure the AI's tone, response length, and appearance to match your brand.
                 </p>
               </div>
+            </div>
+          </div>
+        </section> */}
+        <section className="flex-grow flex items-center justify-center bg-gradient-to-b from-white to-gray-50 py-16">
+          <div className="container mx-auto p-4 md:p-6">
+            <div className="grid md:grid-cols-2 gap-6">
+              <div className="space-y-6">
+                <DocumentUploader />
+                <TextKnowledgeBase />
+              </div>
+              <ChatWidget />
             </div>
           </div>
         </section>
@@ -98,7 +112,7 @@ export default function Home() {
                 </p>
                 <p className="text-sm text-gray-400 mt-1">Powered by DeepSeek AI</p>
               </div>
-              
+
               <div className="flex gap-6">
                 <span 
                   className="text-gray-300 hover:text-white cursor-pointer"

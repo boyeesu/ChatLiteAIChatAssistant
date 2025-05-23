@@ -81,28 +81,17 @@ function simulateResponse(
   contextChunks: string[],
   config: WidgetConfig
 ): string {
-  // Extract key phrases from the context to make the response seem more informed
+  console.log("Using fallback response generator with context chunks:", 
+              contextChunks.length > 0 ? contextChunks.length : "none");
+  
+  // If we have context chunks, use them directly in the response
   if (contextChunks.length > 0) {
-    const contextSample = contextChunks[0].substring(0, 150);
-    const keywords = extractKeywords(contextSample);
-
-    // Create a response that appears to be based on the context
-    if (userQuery.toLowerCase().includes("how") || userQuery.toLowerCase().includes("what")) {
-      return `Based on our knowledge base, ${keywords.join(", ")} are key elements to consider. ${contextChunks[0].split('.')[0] || "This concept is important to understand"}.`;
-    } else if (userQuery.toLowerCase().includes("why")) {
-      return `The reason involves ${keywords.join(" and ") || "several factors"}. According to our information, ${contextChunks[0].split('.')[0] || "this is a key consideration"}.`;
-    } else {
-      return `I found information about ${keywords[0] || "your topic"} in our knowledge base. ${contextChunks[0].split('.')[0] || "This information may be helpful to you"}.`;
-    }
+    // Join the first 2-3 most relevant chunks
+    const relevantInfo = contextChunks.slice(0, 3).join("\n\n");
+    
+    return `Based on the information in our knowledge base:\n\n${relevantInfo}\n\nThis is the most relevant information I could find for your query. The DeepSeek AI model is currently unavailable, so I'm showing you the raw context chunks instead of a synthesized answer.`;
   } else {
-    const genericResponses = [
-      "I don't have specific information about that in our knowledge base. Could you provide more details or ask something else?",
-      "I couldn't find detailed information about that in our current documents. Would you like to know about something else?",
-      "That's beyond the scope of our current knowledge base. Can I assist you with something else?",
-      "Unfortunately, our documents don't contain information to answer that question accurately. Could you try rephrasing or asking about another topic?"
-    ];
-
-    return genericResponses[Math.floor(Math.random() * genericResponses.length)];
+    return "I couldn't find specific information about that in our knowledge base. Please try adding some text or documents to the knowledge base first, then ask again. (Note: The DeepSeek AI model is currently unavailable, so responses are using a fallback method.)";
   }
 }
 

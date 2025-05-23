@@ -131,6 +131,7 @@ export async function storeDocumentWithEmbeddings(
     
     // Chunk the document content
     const chunks = chunkDocumentContent(document);
+    console.log(`Processing document "${fileName}" into ${chunks.length} chunks`);
     
     // Create and store embeddings for each chunk
     for (let i = 0; i < chunks.length; i++) {

@@ -40,26 +40,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/documents/upload", upload.single("file"), async (req: Request, res: Response) => {
     try {
       if (!req.file) {
-        return res.status(400).json({ message: "No file uploaded" });
+        return res.status(400).json({ message: "No file provided" });
       }
 
       const file = req.file;
       const fileType = file.originalname.split('.').pop() || "";
-      
+
       // Check if file type is supported
       if (!isFileTypeSupported(fileType)) {
         return res.status(400).json({ message: "Unsupported file type. Supported types: PDF, TXT, DOCX, HTML" });
       }
-      
+
       // Check file size
       const fileSizeKb = Math.round(file.size / 1024);
       if (!isFileSizeValid(fileSizeKb)) {
         return res.status(400).json({ message: "File too large. Maximum size is 50MB" });
       }
-      
+
       // Convert buffer to string (in a real app, would use proper parsers)
       const content = file.buffer.toString("utf-8");
-      
+
       // Process the document
       const documentData = await processDocument(
         file.originalname,
@@ -67,21 +67,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         content,
         fileSizeKb
       );
-      
+
       // Validate document data
       const validatedData = insertDocumentSchema.parse(documentData);
-      
+
       // Store the document
       const document = await storage.createDocument(validatedData);
-      
+
       // Chunk the document for RAG
       const chunks = chunkDocumentContent(document);
-      
+
       // Create and store embeddings for each chunk
       for (let i = 0; i < chunks.length; i++) {
         const chunk = chunks[i];
         const embedding = createSimpleEmbedding(chunk);
-        
+
         await storage.createEmbedding({
           documentId: document.id,
           chunkIndex: i,
@@ -89,11 +89,70 @@ export async function registerRoutes(app: Express): Promise<Server> {
           embedding: embedding,
         });
       }
-      
-      res.status(201).json(document);
+
+      res.status(201).json({
+        id: document.id,
+        fileName: document.fileName,
+        fileType: document.fileType,
+        fileSizeKb: document.fileSizeKb,
+        uploadedAt: document.uploadedAt,
+      });
     } catch (error) {
       console.error("Error uploading document:", error);
-      res.status(500).json({ message: `Error uploading document: ${error}` });
+      res.status(500).json({ message: `Server error: ${error}` });
+    }
+  });
+
+  // New endpoint for text knowledge
+  app.post("/api/knowledge/text", async (req: Request, res: Response) => {
+    try {
+      const { text } = req.body;
+
+      if (!text || typeof text !== 'string' || text.trim().length === 0) {
+        return res.status(400).json({ message: "No valid text provided" });
+      }
+
+      // Create a document name with timestamp
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+      const fileName = `Knowledge-Text-${timestamp}.txt`;
+
+      // Process as a text document
+      const documentData = await processDocument(
+        fileName,
+        'txt',
+        text,
+        Math.ceil(Buffer.byteLength(text, 'utf8') / 1024) // Size in KB
+      );
+
+      // Validate and store
+      const validatedData = insertDocumentSchema.parse(documentData);
+      const document = await storage.createDocument(validatedData);
+
+      // Chunk and create embeddings
+      const chunks = chunkDocumentContent(document);
+      console.log(`Processing text into ${chunks.length} chunks for knowledge base`);
+
+      for (let i = 0; i < chunks.length; i++) {
+        const chunk = chunks[i];
+        const embedding = createSimpleEmbedding(chunk);
+
+        await storage.createEmbedding({
+          documentId: document.id,
+          chunkIndex: i,
+          content: chunk,
+          embedding: embedding,
+        });
+      }
+
+      res.status(201).json({
+        message: "Text successfully added to knowledge base",
+        documentId: document.id,
+        chunksCount: chunks.length
+      });
+
+    } catch (error) {
+      console.error("Error adding text knowledge:", error);
+      res.status(500).json({ message: `Server error: ${error}` });
     }
   });
 
@@ -104,12 +163,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (isNaN(documentId)) {
         return res.status(400).json({ message: "Invalid document ID" });
       }
-      
+
       const deleted = await storage.deleteDocument(documentId);
       if (!deleted) {
         return res.status(404).json({ message: "Document not found" });
       }
-      
+
       res.status(200).json({ message: "Document deleted successfully" });
     } catch (error) {
       res.status(500).json({ message: `Error deleting document: ${error}` });
@@ -123,7 +182,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!config) {
         return res.status(404).json({ message: "Widget configuration not found" });
       }
-      
+
       res.json(config);
     } catch (error) {
       res.status(500).json({ message: `Error fetching widget configuration: ${error}` });
@@ -136,10 +195,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Validate the request body
       const updateSchema = insertWidgetConfigSchema.partial();
       const validatedData = updateSchema.parse(req.body);
-      
+
       // Update the configuration
       const updatedConfig = await storage.updateWidgetConfig(validatedData);
-      
+
       res.json(updatedConfig);
     } catch (error) {
       res.status(500).json({ message: `Error updating widget configuration: ${error}` });
@@ -151,7 +210,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const days = Number(req.query.days) || 7;
       const analytics = await storage.getAnalytics(days);
-      
+
       res.json(analytics);
     } catch (error) {
       res.status(500).json({ message: `Error fetching analytics: ${error}` });
@@ -166,15 +225,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!sessionId) {
         sessionId = randomUUID();
       }
-      
+
       // Check if conversation already exists
       let conversation = await storage.getConversationBySessionId(sessionId);
-      
+
       // If not, create a new one
       if (!conversation) {
         conversation = await storage.createConversation({ sessionId });
       }
-      
+
       res.status(200).json(conversation);
     } catch (error) {
       console.error("Conversation creation error:", error);
@@ -186,16 +245,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/conversations/:sessionId/messages", async (req: Request, res: Response) => {
     try {
       const { sessionId } = req.params;
-      
+
       // Get the conversation
       const conversation = await storage.getConversationBySessionId(sessionId);
       if (!conversation) {
         return res.status(404).json({ message: "Conversation not found" });
       }
-      
+
       // Get messages for the conversation
       const messages = await storage.getMessagesByConversationId(conversation.id);
-      
+
       res.json(messages);
     } catch (error) {
       res.status(500).json({ message: `Error fetching messages: ${error}` });
@@ -206,40 +265,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/conversations/:sessionId/messages", async (req: Request, res: Response) => {
     try {
       const { sessionId } = req.params;
-      
+
       // Validate the message content
       const messageSchema = z.object({ content: z.string() });
       const { content } = messageSchema.parse(req.body);
-      
+
       // Get the conversation
       const conversation = await storage.getConversationBySessionId(sessionId);
       if (!conversation) {
         return res.status(404).json({ message: "Conversation not found" });
       }
-      
+
       // Save the user message
       const userMessage = await storage.createMessage({
         conversationId: conversation.id,
         isUser: true,
         content,
       });
-      
+
       // Get widget configuration for AI settings
       const config = await storage.getWidgetConfig();
       if (!config) {
         return res.status(500).json({ message: "Widget configuration not found" });
       }
-      
+
       // Generate AI response using RAG
       const aiResponseContent = await generateRAGResponse(content, config);
-      
+
       // Save the AI response
       const aiMessage = await storage.createMessage({
         conversationId: conversation.id,
         isUser: false,
         content: aiResponseContent,
       });
-      
+
       // Return both messages
       res.status(200).json({
         userMessage,
