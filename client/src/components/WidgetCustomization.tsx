@@ -14,28 +14,7 @@ import { WidgetConfig } from '@/lib/types';
 export default function WidgetCustomization() {
   const { config, updateConfig, isLoading, isUpdating } = useWidgetConfig();
   const { toast } = useToast();
-  
-  // Function to handle form submission
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!config) return;
-    
-    // Generate embed code when saving config
-    const embedCode = generateEmbedCode(config);
-    
-    // Update configuration with new embed code
-    updateConfig({ 
-      ...config, 
-      embedCode, 
-      lastUpdated: new Date() 
-    });
-    
-    toast({
-      title: "Changes saved",
-      description: "Widget customization has been updated"
-    });
-  };
-  
+
   // Generate embed code based on current configuration
   const generateEmbedCode = (config: WidgetConfig) => {
     const domain = window.location.origin;
@@ -56,6 +35,33 @@ export default function WidgetCustomization() {
 <!-- End AI Chat Widget -->`
   };
 
+  // Handle form submit
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!config) return;
+    try {
+      const embedCode = generateEmbedCode(config);
+      await updateConfig({ ...config, embedCode, lastUpdated: new Date() });
+      toast({
+        title: 'Changes applied',
+        description: 'Widget customization has been updated successfully.',
+      });
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: `Failed to apply changes: ${error}`,
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const icons = [
+    { id: 'message', name: 'Message', icon: <MessageCircle className="h-5 w-5" /> },
+    { id: 'customer-service', name: 'Support', icon: <HeadphonesIcon className="h-5 w-5" /> },
+    { id: 'robot', name: 'Robot', icon: <Bot className="h-5 w-5" /> },
+    { id: 'question-answer', name: 'Help', icon: <HelpCircle className="h-5 w-5" /> },
+  ];
+
   if (isLoading || !config) {
     return (
       <Card>
@@ -75,30 +81,6 @@ export default function WidgetCustomization() {
       </Card>
     );
   }
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      await updateConfig(config);
-      toast({
-        title: 'Changes applied',
-        description: 'Widget customization has been updated successfully.',
-      });
-    } catch (error) {
-      toast({
-        title: 'Error',
-        description: `Failed to apply changes: ${error}`,
-        variant: 'destructive',
-      });
-    }
-  };
-  
-  const icons = [
-    { id: 'message', name: 'Message', icon: <MessageCircle className="h-5 w-5" /> },
-    { id: 'customer-service', name: 'Support', icon: <HeadphonesIcon className="h-5 w-5" /> },
-    { id: 'robot', name: 'Robot', icon: <Bot className="h-5 w-5" /> },
-    { id: 'question-answer', name: 'Help', icon: <HelpCircle className="h-5 w-5" /> },
-  ];
 
   return (
     <Card>
@@ -230,6 +212,7 @@ export default function WidgetCustomization() {
                 className="absolute top-2 right-2"
                 variant="ghost"
                 size="sm"
+                type="button"
                 onClick={() => {
                   navigator.clipboard.writeText(generateEmbedCode(config));
                   toast({
@@ -238,7 +221,8 @@ export default function WidgetCustomization() {
                   });
                 }}
               >
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+                {/* Clipboard Icon */}
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
               </Button>
             </div>
             <p className="text-xs text-gray-500">
