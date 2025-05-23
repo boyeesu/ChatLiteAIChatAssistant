@@ -60,15 +60,46 @@ export function chunkDocumentContent(
   const content = document.content;
   const chunks: string[] = [];
   
-  // Simple chunking strategy by characters
-  // In a real implementation, you would use more sophisticated
-  // chunking strategies that respect sentence/paragraph boundaries
+  // Improved chunking strategy that tries to respect sentence boundaries
+  // This helps create more meaningful chunks for RAG
   
-  for (let i = 0; i < content.length; i += chunkSize - chunkOverlap) {
-    const chunk = content.substring(i, i + chunkSize);
-    if (chunk.trim()) {
-      chunks.push(chunk);
+  // Split content into sentences
+  const sentences = content.match(/[^.!?]+[.!?]+/g) || [];
+  
+  if (sentences.length === 0) {
+    // Fallback to character-based chunking if sentence splitting fails
+    for (let i = 0; i < content.length; i += chunkSize - chunkOverlap) {
+      const chunk = content.substring(i, i + chunkSize);
+      if (chunk.trim()) {
+        chunks.push(chunk);
+      }
     }
+    return chunks;
+  }
+  
+  // Group sentences into chunks that are approximately chunkSize characters
+  let currentChunk = "";
+  
+  for (const sentence of sentences) {
+    // If adding this sentence would exceed the chunk size and we already have content,
+    // save the current chunk and start a new one
+    if (currentChunk.length + sentence.length > chunkSize && currentChunk.length > 0) {
+      chunks.push(currentChunk.trim());
+      
+      // Start new chunk with overlap - include the last few sentences from previous chunk
+      const sentencesInCurrentChunk = currentChunk.match(/[^.!?]+[.!?]+/g) || [];
+      const overlapSentences = sentencesInCurrentChunk.slice(-2).join(" "); // Last 2 sentences
+      
+      currentChunk = overlapSentences + " " + sentence;
+    } else {
+      // Add sentence to current chunk
+      currentChunk += " " + sentence;
+    }
+  }
+  
+  // Add the last chunk if it's not empty
+  if (currentChunk.trim()) {
+    chunks.push(currentChunk.trim());
   }
   
   return chunks;

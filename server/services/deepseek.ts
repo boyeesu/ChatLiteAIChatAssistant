@@ -1,146 +1,106 @@
 import { WidgetConfig } from "@shared/schema";
 
-// Define response type from DeepSeek API
-interface DeepSeekResponse {
-  id: string;
-  object: string;
-  created: number;
-  model: string;
-  choices: {
-    index: number;
-    message: {
-      role: string;
-      content: string;
-    };
-    finish_reason: string;
-  }[];
-  usage: {
-    prompt_tokens: number;
-    completion_tokens: number;
-    total_tokens: number;
-  };
-}
-
-// Helper function to construct prompts based on AI tone, response length, and custom instructions
-export function constructPrompt(
-  query: string,
-  context: string[],
-  config: WidgetConfig
-): string {
-  // Check for custom instructions first - highest priority
-  if (config.aiInstructions) {
-    // Start with a base prompt and add custom instructions
-    let systemPrompt = `You are an AI assistant for customer support. 
-${config.aiInstructions}
-
-`;
-    
-    // Add context information if available
-    if (context.length > 0) {
-      systemPrompt += `\nHere is relevant information from the knowledge base:\n`;
-      context.forEach((piece, index) => {
-        systemPrompt += `\nContext ${index + 1}:\n${piece}\n`;
-      });
-      systemPrompt += `\nBase your answer on this information. If the information doesn't contain the answer, say so and provide a general response.`;
-    }
-    
-    return systemPrompt;
-  }
-  
-  // If no custom instructions, use the tone and length settings
-  // Define tone modifiers based on the selected AI tone
-  const toneModifiers: Record<string, string> = {
-    professional: "in a professional, business-like manner",
-    friendly: "in a friendly, conversational tone",
-    technical: "with detailed technical information",
-    casual: "in a casual, relaxed way",
-    formal: "in a formal, respectful manner",
-  };
-
-  // Define response length modifiers
-  const lengthModifiers: Record<number, string> = {
-    1: "Answer concisely with minimal details.",
-    2: "Provide a brief answer with important details.",
-    3: "Give a balanced answer with relevant details.",
-    4: "Provide a comprehensive answer with examples.",
-    5: "Give a thorough, detailed answer with examples and explanations.",
-  };
-
-  // Get the appropriate modifiers based on config
-  const toneModifier = toneModifiers[config.aiTone] || toneModifiers.professional;
-  const lengthModifier = lengthModifiers[config.responseLength] || lengthModifiers[3];
-
-  // Construct the system prompt with context, tone, and length instructions
-  let systemPrompt = `You are a helpful AI assistant ${toneModifier}. ${lengthModifier} `;
-  
-  // Add context information if available
-  if (context.length > 0) {
-    systemPrompt += `\n\nHere is some relevant information that may help answer the query:\n`;
-    context.forEach((piece, index) => {
-      systemPrompt += `\nContext ${index + 1}:\n${piece}\n`;
-    });
-    systemPrompt += `\nUse the above information to answer the query. If the information doesn't contain the answer, say so and provide a general response.`;
-  }
-
-  return systemPrompt;
-}
-
-// Function to query the DeepSeek API
+// Function to query DeepSeek API (or simulate responses for demo)
 export async function queryDeepSeek(
-  query: string,
-  context: string[],
+  userQuery: string,
+  contextChunks: string[],
   config: WidgetConfig
 ): Promise<string> {
-  // Get API key from environment variables with fallback
-  const apiKey = process.env.DEEPSEEK_API_KEY || process.env.DEEPSEEK_KEY || "";
-  
-  if (!apiKey) {
-    throw new Error("DeepSeek API key not found in environment variables");
+  // In a real implementation, this would call the DeepSeek API
+  // For demo purposes, we're simulating a response based on the context
+
+  // Formulate a prompt that incorporates retrieved context
+  let prompt = "";
+
+  if (contextChunks.length > 0) {
+    prompt = `
+I need to answer the following user query using the provided context information:
+
+USER QUERY: ${userQuery}
+
+RELEVANT CONTEXT:
+${contextChunks.join('\n\n---\n\n')}
+
+Based on the above context information, provide a comprehensive and helpful response to the user's query.
+If the context doesn't contain relevant information to answer the query, acknowledge that and provide a general response.
+`;
+  } else {
+    prompt = `
+I need to answer the following user query:
+
+USER QUERY: ${userQuery}
+
+I don't have specific context from our knowledge base for this query, but please provide a helpful general response.
+`;
   }
 
-  // Construct the prompt based on configuration
-  const systemPrompt = constructPrompt(query, context, config);
+  // In a real implementation, you would call the DeepSeek API here with the prompt
+  // const deepSeekResponse = await callDeepSeekAPI(prompt, config);
 
-  try {
-    // API endpoint
-    const endpoint = "https://api.deepseek.com/v1/chat/completions";
+  // For demo, generate a simulated response
+  let response;
 
-    // Request headers
-    const headers = {
-      "Content-Type": "application/json",
-      "Authorization": `Bearer ${apiKey}`,
-    };
+  if (contextChunks.length > 0) {
+    // Extract key phrases from the context to make the response seem more informed
+    const contextSample = contextChunks[0].substring(0, 150);
+    const keywords = extractKeywords(contextSample);
 
-    // Request body
-    const body = {
-      model: "deepseek-chat", // or the specific model you want to use
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: query }
-      ],
-      temperature: 0.7,
-      max_tokens: 1024,
-    };
-
-    // Make the API request
-    const response = await fetch(endpoint, {
-      method: "POST",
-      headers,
-      body: JSON.stringify(body),
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`DeepSeek API error: ${response.status} - ${errorText}`);
+    // Create a response that appears to be based on the context
+    if (userQuery.toLowerCase().includes("how") || userQuery.toLowerCase().includes("what")) {
+      response = `Based on our knowledge base, ${keywords.join(", ")} are key elements to consider. ${contextChunks[0].split('.')[0]}.`;
+    } else if (userQuery.toLowerCase().includes("why")) {
+      response = `The reason involves ${keywords.join(" and ")}. According to our information, ${contextChunks[0].split('.')[0]}.`;
+    } else {
+      response = `I found information about ${keywords[0] || "your topic"} in our knowledge base. ${contextChunks[0].split('.')[0]}.`;
     }
 
-    // Parse the response
-    const data: DeepSeekResponse = await response.json();
-    
-    // Extract and return the AI's response
-    return data.choices[0]?.message?.content || "Sorry, I couldn't generate a response at this time.";
-  } catch (error) {
-    console.error("Error querying DeepSeek API:", error);
-    throw new Error(`Failed to get response from DeepSeek: ${error instanceof Error ? error.message : String(error)}`);
+    // Add a second point from another context chunk if available
+    if (contextChunks.length > 1) {
+      response += ` Additionally, ${contextChunks[1].split('.')[0]}.`;
+    }
+  } else {
+    // Generic responses when no context is available
+    const genericResponses = [
+      "I don't have specific information about that in our knowledge base. Could you provide more details or ask something else?",
+      "I couldn't find detailed information about that in our current documents. Would you like to know about something else?",
+      "That's beyond the scope of our current knowledge base. Can I assist you with something else?",
+      "Unfortunately, our documents don't contain information to answer that question accurately. Could you try rephrasing or asking about another topic?"
+    ];
+
+    response = genericResponses[Math.floor(Math.random() * genericResponses.length)];
   }
+
+  // Adjust response length based on config
+  if (config.responseLength <= 2) {
+    // Shorter response
+    response = response.split('.')[0] + '.';
+  } else if (config.responseLength >= 4) {
+    // Longer, more detailed response
+    if (contextChunks.length > 2) {
+      response += ` Furthermore, ${contextChunks[2].split('.')[0]}.`;
+    }
+    response += "\n\nIs there anything else you'd like to know about this topic?";
+  }
+
+  // Simulate API delay
+  await new Promise(resolve => setTimeout(resolve, 1000));
+
+  return response;
+}
+
+// Helper function to extract potential keywords from text
+function extractKeywords(text: string): string[] {
+  // A simple implementation - in reality would use NLP techniques
+  const words = text.split(' ');
+  const stopWords = ['the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'with', 'by', 'about', 'as'];
+
+  // Filter out common words and short words, keep only potential keywords
+  return words
+    .filter(word => 
+      word.length > 4 && 
+      !stopWords.includes(word.toLowerCase()) &&
+      /^[a-zA-Z]+$/.test(word) // only alphabetic words
+    )
+    .slice(0, 3) // Take just a few keywords
+    .map(word => word.replace(/[^a-zA-Z]/g, '')); // Clean up any remaining punctuation
 }

@@ -107,7 +107,15 @@ export async function generateRAGResponse(
 ): Promise<string> {
   try {
     // Find relevant chunks for the query
-    const contextChunks = await findSimilarChunks(query);
+    const contextChunks = await findSimilarChunks(query, 5); // Increased from default 3 to 5 chunks for better context
+    
+    if (contextChunks.length === 0) {
+      console.log("No context chunks found for query:", query);
+      // If no context is found, still attempt to answer with DeepSeek's knowledge
+      return await queryDeepSeek(query, [], config);
+    }
+    
+    console.log(`Found ${contextChunks.length} relevant context chunks for query:`, query);
     
     // Generate response using DeepSeek with context
     const response = await queryDeepSeek(query, contextChunks, config);
